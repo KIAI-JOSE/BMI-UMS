@@ -17,7 +17,8 @@ import {
   ShieldCheck,
   Stethoscope,
   Package,
-  Award
+  Award,
+  FileText
 } from 'lucide-react';
 import { NavItem } from '../types';
 
@@ -37,6 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, onLogout, 
     { id: 'finance', label: 'Finance', icon: CreditCard },
     { id: 'courses', label: 'Courses', icon: MonitorPlay },
     { id: 'exams', label: 'Exams & Grading', icon: FileSpreadsheet },
+    { id: 'transcripts', label: 'Transcripts', icon: FileText },
     { id: 'library', label: 'Library', icon: Book },
     { id: 'hostels', label: 'Hostels', icon: Home },
     { id: 'medical', label: 'Health Center', icon: Stethoscope },
