@@ -17,6 +17,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from './StatCard';
 import StudentRegistrationModal from './StudentRegistrationModal';
+import { Student } from '../types';
 
 interface DashboardProps {
   userName: string;
@@ -67,8 +68,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, theme, onNavigate, stat
     setIsLoading(false);
   };
 
-  const handleStudentEnrolled = (name: string) => {
-    onAddStudent(name);
+  const handleStudentEnrolled = (studentData: Partial<Student>) => {
+    const fullName = `${studentData.firstName || ''} ${studentData.lastName || ''}`.trim();
+    onAddStudent(fullName);
     showToast(`Institutional Record committed to registry.`);
   };
 
@@ -163,8 +165,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, theme, onNavigate, stat
             </div>
           </div>
 
-          <div className="h-72 relative z-10">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-72 min-h-[280px] relative z-10">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={revenueTrend}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">

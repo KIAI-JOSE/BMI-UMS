@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { 
   Download, 
@@ -41,7 +42,8 @@ const Finance: React.FC<FinanceProps> = ({ theme, students, staff, transactions,
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewTxModalOpen, setIsNewTxModalOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  // Fixed: Update selectedStudent state type to include computed properties from the ledger
+  const [selectedStudent, setSelectedStudent] = useState<(Student & { paid: number; pending: number; txCount: number }) | null>(null);
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [showReceipt, setShowReceipt] = useState<Transaction | null>(null);
   const [keepOpen, setKeepOpen] = useState(false);
@@ -51,11 +53,18 @@ const Finance: React.FC<FinanceProps> = ({ theme, students, staff, transactions,
   const [deptFilter, setDeptFilter] = useState('All Dept');
   const [yearFilter, setYearFilter] = useState('All Years');
 
-  const [newTx, setNewTx] = useState({
+  // Fixed: explicitly typed newTx state to allow all valid Transaction statuses
+  const [newTx, setNewTx] = useState<{
+    name: string;
+    desc: string;
+    amt: string;
+    status: Transaction['status'];
+    date: string;
+  }>({
     name: '',
     desc: 'Tuition Payment',
     amt: '',
-    status: 'Paid' as const,
+    status: 'Paid',
     date: new Date().toISOString().split('T')[0]
   });
 

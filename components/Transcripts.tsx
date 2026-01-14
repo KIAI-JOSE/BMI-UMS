@@ -1,22 +1,17 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Search, 
-  Filter, 
   Printer, 
   Download, 
-  Share2, 
   FileText, 
-  Award, 
-  GraduationCap, 
+  BookOpen, 
   X, 
   ChevronRight, 
   ShieldCheck, 
-  Mail,
-  History,
-  TrendingUp,
-  ExternalLink,
-  ShieldAlert,
-  CheckCircle
+  Share2,
+  MessageCircle,
+  Award,
+  Calendar
 } from 'lucide-react';
 import { Student, Course } from '../types';
 
@@ -39,57 +34,138 @@ interface PerformanceRecord {
 const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [facultyFilter, setFacultyFilter] = useState('All Faculty');
-  const [deptFilter, setDeptFilter] = useState('All Dept');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [transcriptType, setTranscriptType] = useState<'Official' | 'Provisional'>('Official');
+  const [selectedTerm, setSelectedTerm] = useState('Fall 2023');
 
   const faculties = ['All Faculty', 'Theology', 'ICT', 'Business', 'Education'];
-  const depts = ['All Dept', 'Biblical Studies', 'Computer Science', 'Philosophy & Ethics', 'Finance'];
+  const terms = ['Fall 2022', 'Spring 2023', 'Fall 2023', 'Spring 2024'];
+
+  const getDeanName = (faculty: string) => {
+    const deans: Record<string, string> = {
+      'Theology': 'Dr. Samuel Kiptoo',
+      'ICT': 'Prof. Alice Mwangi',
+      'Business': 'Dr. Jane Okumu',
+      'Education': 'Prof. Peter Kamau'
+    };
+    return deans[faculty] || 'Dean of Faculty';
+  };
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
       const q = searchTerm.toLowerCase();
       const matchesSearch = `${s.firstName} ${s.lastName} ${s.id}`.toLowerCase().includes(q);
       const matchesFaculty = facultyFilter === 'All Faculty' || s.faculty === facultyFilter;
-      const matchesDept = deptFilter === 'All Dept' || s.department === deptFilter;
-      return matchesSearch && matchesFaculty && matchesDept;
+      return matchesSearch && matchesFaculty;
     });
-  }, [students, searchTerm, facultyFilter, deptFilter]);
+  }, [students, searchTerm, facultyFilter]);
 
   const getPerformanceRecords = (student: Student): PerformanceRecord[] => {
     const facultyCourses = courses.filter(c => c.faculty === student.faculty || c.faculty === 'General');
-    const selected = facultyCourses.slice(0, 6);
+    const selected = facultyCourses.slice(0, 15);
     
-    return selected.map(c => {
-      const seed = (student.id.length + c.code.length + student.firstName.length) % 30;
-      const score = 65 + seed;
+    return selected.map((c, idx) => {
+      const seed = (student.id.length + c.code.length + student.firstName.length + idx) % 30;
+      const score = 85 + (seed % 15);
       let grade = 'F';
       let points = 0;
       
-      if (score >= 90) { grade = 'A'; points = 4.0; }
-      else if (score >= 80) { grade = 'B'; points = 3.0; }
-      else if (score >= 70) { grade = 'C'; points = 2.0; }
-      else if (score >= 60) { grade = 'D'; points = 1.0; }
+      if (score >= 70) { grade = 'A'; points = 4.0; }
+      else if (score >= 60) { grade = 'B'; points = 3.0; }
+      else if (score >= 50) { grade = 'C'; points = 2.0; }
+      else if (score >= 40) { grade = 'D'; points = 1.0; }
       
+      const termIdx = Math.floor(idx / 4);
+      const term = terms[termIdx % terms.length];
+
       return {
         courseCode: c.code,
         courseName: c.name,
-        credits: c.credits,
+        credits: c.credits * 15,
         score,
         grade,
         points,
-        term: student.enrollmentTerm
+        term: term
       };
     });
   };
 
-  const currentRecords = selectedStudent ? getPerformanceRecords(selectedStudent) : [];
-  const cgpa = useMemo(() => {
+  const allRecords = useMemo(() => selectedStudent ? getPerformanceRecords(selectedStudent) : [], [selectedStudent]);
+  
+  const currentRecords = useMemo(() => {
+    if (transcriptType === 'Official') return allRecords;
+    return allRecords.filter(r => r.term === selectedTerm);
+  }, [allRecords, transcriptType, selectedTerm]);
+
+  const cumulativeAvg = useMemo(() => {
     if (currentRecords.length === 0) return "0.00";
-    const totalPoints = currentRecords.reduce((acc, curr) => acc + (curr.points * curr.credits), 0);
-    const totalCredits = currentRecords.reduce((acc, curr) => acc + curr.credits, 0);
-    return (totalPoints / totalCredits).toFixed(2);
+    const sum = currentRecords.reduce((acc, curr) => acc + curr.score, 0);
+    return (sum / currentRecords.length).toFixed(2);
   }, [currentRecords]);
+
+  const handlePrint = async (mode: 'print' | 'download' = 'print') => {
+    if (!selectedStudent) return;
+    const element = document.getElementById('official-transcript-root');
+    if (!element) return;
+    const fileName = `${transcriptType}_TRANSCRIPT_${selectedStudent.id}_${selectedStudent.lastName}`.toUpperCase();
+    
+    if (mode === 'download') {
+      try {
+        const html2pdfModule = await import('https://esm.sh/html2pdf.js@0.10.1?bundle');
+        const html2pdf = html2pdfModule.default;
+        if (typeof html2pdf !== 'function') throw new Error("html2pdf is not a function");
+        const opt = {
+          margin: 0,
+          filename: `${fileName}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        await html2pdf().set(opt).from(element).save();
+      } catch (err) {
+        console.error("PDF download failed", err);
+        window.print();
+      }
+    } else {
+      const originalTitle = document.title;
+      document.title = fileName;
+      window.print();
+      setTimeout(() => { document.title = originalTitle; }, 1000);
+    }
+  };
+
+  const handleShare = async (platform?: 'whatsapp') => {
+    if (!selectedStudent) return;
+    const element = document.getElementById('official-transcript-root');
+    if (!element) return;
+    if (platform === 'whatsapp') {
+       try {
+          const html2pdfModule = await import('https://esm.sh/html2pdf.js@0.10.1?bundle');
+          const html2pdf = html2pdfModule.default;
+          const pdfBlob = await html2pdf().from(element).set({
+            margin: 10,
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }).output('blob');
+          const file = new File([pdfBlob], `TRANSCRIPT_${selectedStudent.id}.pdf`, { type: 'application/pdf' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+             await navigator.share({
+                files: [file],
+                title: `${transcriptType} Academic Transcript`,
+                text: `${transcriptType} transcript for ${selectedStudent.firstName} ${selectedStudent.lastName} (${selectedStudent.id})`
+             });
+          } else {
+             const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(transcriptType + " Academic Transcript for " + selectedStudent.firstName + " " + selectedStudent.lastName + " (" + selectedStudent.id + ")")}`;
+             window.open(waUrl, '_blank');
+          }
+       } catch (err) {
+          const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent("Academic Transcript Link: " + window.location.href)}`;
+          window.open(waUrl, '_blank');
+       }
+       return;
+    }
+    handlePrint('print');
+  };
 
   return (
     <div className="p-8 space-y-8 animate-fade-in pb-20">
@@ -116,7 +192,6 @@ const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) =>
                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-none text-xs font-bold uppercase tracking-tight outline-none focus:ring-1 focus:ring-[#4B0082]"
                  />
               </div>
-
               <div className="space-y-4">
                  <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Target Faculty</label>
@@ -128,28 +203,13 @@ const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) =>
                        {faculties.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                  </div>
-                 <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Departmental Node</label>
-                    <select 
-                      value={deptFilter}
-                      onChange={e => setDeptFilter(e.target.value)}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-none text-[10px] font-black uppercase outline-none focus:ring-1 focus:ring-[#4B0082] cursor-pointer dark:text-gray-200"
-                    >
-                       {depts.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                 </div>
               </div>
-
               <div className="pt-6 border-t border-gray-50 dark:border-gray-700">
-                 <div className="flex justify-between items-center text-[10px] font-black uppercase text-gray-400 tracking-widest mb-3">
-                    <span>Active Audit Pool</span>
-                    <span className="text-[#4B0082] dark:text-[#FFD700]">{filteredStudents.length} Students</span>
-                 </div>
                  <div className="max-h-[400px] overflow-y-auto no-scrollbar space-y-1">
                     {filteredStudents.map(student => (
                       <button 
                         key={student.id}
-                        onClick={() => setSelectedStudent(student)}
+                        onClick={() => { setSelectedStudent(student); setShowTranscript(false); }}
                         className={`w-full text-left p-3 rounded-none transition-all flex items-center justify-between group ${selectedStudent?.id === student.id ? 'bg-[#4B0082] text-white shadow-lg' : 'hover:bg-purple-50 dark:hover:bg-gray-700'}`}
                       >
                          <div>
@@ -175,44 +235,25 @@ const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) =>
                             {selectedStudent.photo ? <img src={selectedStudent.photo} className="w-full h-full object-cover" style={{ transform: `scale(${selectedStudent.photoZoom})` }} /> : <div className="w-full h-full flex items-center justify-center text-3xl font-black text-white">{selectedStudent.firstName[0]}</div>}
                          </div>
                          <div>
-                            <div className="flex items-center gap-3">
-                               <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">{selectedStudent.firstName} {selectedStudent.lastName}</h3>
-                               <ShieldCheck size={20} className="text-emerald-500" />
-                            </div>
+                            <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter leading-none">{selectedStudent.firstName} {selectedStudent.lastName}</h3>
                             <p className="text-xs font-bold text-[#4B0082] dark:text-[#FFD700] uppercase tracking-widest mt-3">{selectedStudent.careerPath} • {selectedStudent.id}</p>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">Status: {selectedStudent.status} • Admission: {selectedStudent.admissionYear}</p>
                          </div>
-                      </div>
-                      <div className="flex gap-4">
-                         <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-none border border-gray-100 dark:border-gray-600 text-center min-w-[120px]">
-                            <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Cumulative GPA</p>
-                            <p className="text-3xl font-black text-[#4B0082] dark:text-white leading-none">{cgpa}</p>
-                         </div>
-                         <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-none border border-gray-100 dark:border-gray-600 text-center min-w-[120px]">
-                            <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest mb-1">Rank Status</p>
-                            <p className="text-xl font-black text-emerald-600 uppercase leading-none mt-2">{selectedStudent.standing}</p>
-                         </div>
-                      </div>
-                   </div>
-                   <div className="p-6 bg-gray-900 border-t border-gray-800 flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                         <TrendingUp size={16} className="text-[#FFD700]" />
-                         <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Performance is 12% above institutional mean for this faculty track.</span>
                       </div>
                       <button 
                         onClick={() => setShowTranscript(true)}
                         className="px-10 py-4 bg-[#FFD700] text-[#4B0082] rounded-none font-black text-xs uppercase tracking-widest shadow-xl hover:bg-white transition-all flex items-center gap-3"
                       >
-                         <FileText size={18} /> Generate Official Transcript
+                         <FileText size={18} /> Official Transcript View
                       </button>
                    </div>
                 </div>
 
                 <div className="bg-white dark:bg-gray-800 rounded-none shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                   <div className="p-6 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4B0082] dark:text-[#FFD700] flex items-center gap-2">
-                         <GraduationCap size={16} /> Course Grade Aggregation Node
-                      </h4>
+                   <div className="p-6 bg-gray-900 text-white flex justify-between items-center border-b border-gray-800">
+                      <div className="flex items-center gap-3">
+                         <BookOpen size={18} className="text-[#FFD700]" />
+                         <h3 className="font-black text-xs uppercase tracking-[0.25em]">Live Academic Performance Node</h3>
+                      </div>
                       <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400">
                          <ShieldCheck size={14} className="text-emerald-500" /> SYSTEM VERIFIED RECORDS
                       </div>
@@ -220,49 +261,28 @@ const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) =>
                    <div className="overflow-x-auto no-scrollbar">
                       <table className="w-full text-left">
                          <thead>
-                            <tr className="bg-gray-50/50 dark:bg-gray-700/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">
-                               <th className="px-6 py-4">Course Identity</th>
-                               <th className="px-6 py-4 text-center">Semester / Term</th>
-                               <th className="px-6 py-4 text-center">Credits</th>
+                            <tr className="bg-gray-50 dark:bg-gray-700/50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 dark:border-gray-700">
+                               <th className="px-6 py-4">Module Identifier</th>
+                               <th className="px-6 py-4">Specification</th>
                                <th className="px-6 py-4 text-center">Score (%)</th>
-                               <th className="px-6 py-4 text-center">Grade Point</th>
-                               <th className="px-6 py-4 text-center">Final Grade</th>
+                               <th className="px-6 py-4 text-center">Grade</th>
+                               <th className="px-6 py-4 text-center">Term</th>
                             </tr>
                          </thead>
                          <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                             {currentRecords.map((rec, i) => (
-                              <tr key={i} className="hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all">
-                                 <td className="px-6 py-5">
-                                    <p className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{rec.courseName}</p>
-                                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">{rec.courseCode}</p>
+                              <tr key={i} className="hover:bg-purple-50/20 dark:hover:bg-gray-700/20 transition-all group">
+                                 <td className="px-6 py-4 font-mono text-xs font-bold text-[#4B0082] dark:text-purple-300">{rec.courseCode}</td>
+                                 <td className="px-6 py-4 text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight leading-none">{rec.courseName}</td>
+                                 <td className="px-6 py-4 text-center text-sm font-black text-gray-900 dark:text-white">{rec.score}%</td>
+                                 <td className="px-6 py-4 text-center">
+                                    <span className={`text-xl font-black ${rec.score >= 70 ? 'text-emerald-600' : 'text-[#4B0082] dark:text-[#FFD700]'}`}>{rec.grade}</span>
                                  </td>
-                                 <td className="px-6 py-5 text-center text-[10px] font-black uppercase text-gray-500">{rec.term}</td>
-                                 <td className="px-6 py-5 text-center text-sm font-black text-[#4B0082] dark:text-purple-300">{rec.credits}</td>
-                                 <td className="px-6 py-5 text-center text-sm font-black text-gray-900 dark:text-white">{rec.score}%</td>
-                                 <td className="px-6 py-5 text-center">
-                                    <div className="flex flex-col items-center">
-                                       <span className="text-sm font-black text-emerald-600">{rec.points.toFixed(1)}</span>
-                                       <span className="text-[8px] font-black uppercase text-gray-400 tracking-tighter">QUALITY POINTS</span>
-                                    </div>
-                                 </td>
-                                 <td className="px-6 py-5 text-center">
-                                    <span className={`text-2xl font-black ${rec.points >= 3.0 ? 'text-[#4B0082] dark:text-[#FFD700]' : 'text-gray-400'}`}>{rec.grade}</span>
-                                 </td>
+                                 <td className="px-6 py-4 text-center text-[10px] font-black uppercase text-gray-500">{rec.term}</td>
                               </tr>
                             ))}
                          </tbody>
                       </table>
-                   </div>
-                </div>
-
-                <div className="bg-emerald-50 dark:bg-emerald-900/10 border-l-4 border-emerald-500 p-6 flex items-start gap-4">
-                   <div className="p-2 bg-emerald-500 text-white shadow-lg"><ShieldCheck size={20}/></div>
-                   <div>
-                      <h5 className="text-[11px] font-black uppercase text-emerald-600 tracking-widest">Automated Record Synchronization</h5>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
-                         The transcript matrix above has been automatically assembled by aggregating session entries from various faculty lecturers. 
-                         All grades are verified against the institutional mark-book ledger.
-                      </p>
                    </div>
                 </div>
              </div>
@@ -270,184 +290,175 @@ const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) =>
              <div className="h-full min-h-[500px] flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-none border-2 border-dashed border-gray-100 dark:border-gray-700 text-gray-400">
                 <FileText size={80} className="mb-6 opacity-20" />
                 <h3 className="text-xl font-black uppercase tracking-[0.3em] opacity-40">Awaiting Record Selection</h3>
-                <p className="text-xs font-bold uppercase tracking-widest mt-2 opacity-30">Select a student from the institutional pool to initiate audit</p>
              </div>
            )}
         </div>
       </div>
 
       {showTranscript && selectedStudent && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[#1a0033]/95 backdrop-blur-3xl p-4 md:p-8 overflow-y-auto">
-           <div className="bg-white w-full max-w-4xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative animate-slide-up p-12 md:p-16 flex flex-col">
-              
-              {/* RELOCATED: Slanted Official Stamp - Deep Green, Increased Opacity */}
-              <div className="absolute bottom-48 right-16 pointer-events-none z-[40] rotate-[-15deg] opacity-[0.12]">
-                 <div className="border-[8px] border-green-900 px-10 py-5 rounded-xl flex flex-col items-center">
-                    <CheckCircle size={48} className="text-green-900 mb-1" />
-                    <h1 className="text-6xl font-black text-green-900 uppercase leading-none">VERIFIED</h1>
-                    <p className="text-[11px] font-bold text-green-900 tracking-[0.4em] mt-1 text-center leading-tight">BMI UNIVERSITY<br/>OFFICE OF REGISTRAR</p>
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/95 backdrop-blur-3xl p-4 md:p-8 overflow-y-auto">
+           <div className="w-full max-w-[210mm] flex flex-col items-center">
+              <div id="official-transcript-root" className="bg-white w-full shadow-2xl relative flex flex-col overflow-hidden animate-slide-up font-serif p-12 text-gray-950 print:m-0 print:shadow-none">
+                 
+                 {/* UNIQUE BARCODE FOR SECURITY */}
+                 <div className="absolute top-10 right-10 flex flex-col items-center opacity-60">
+                    <div className="flex gap-[1.5px] h-10 items-end">
+                       {Array.from({length: 45}).map((_, i) => (
+                          <div key={i} className="bg-black" style={{ width: i % 4 === 0 ? '2.5px' : i % 2 === 0 ? '1px' : '1.5px', height: `${25 + (Math.sin(i * 1.5) * 6)}px` }}></div>
+                       ))}
+                    </div>
+                    <span className="text-[7px] font-mono mt-1 tracking-tight uppercase font-bold">
+                       VERIFY: {selectedStudent.id.split('-').pop()}-{Date.now().toString().slice(-6)}
+                    </span>
                  </div>
-              </div>
 
-              {/* Transcript Content Container */}
-              <div className="relative z-10 bg-white flex flex-col flex-1">
-                {/* FIXED HEADER: Ensured details show and logo is visible */}
-                <div className="pb-12 mb-8 border-b-2 border-gray-900 flex justify-between items-start">
-                   <div className="flex items-center gap-8">
-                      {/* FIXED LOGO: Explicit height and fallback */}
-                      <div className="w-24 h-24 flex-shrink-0 flex items-center justify-center border border-gray-100 shadow-sm bg-white p-2">
-                        <img 
-                          src={logo || "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png"} 
-                          className="max-w-full max-h-full object-contain" 
-                          onError={(e) => { (e.target as HTMLImageElement).src = "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png" }}
-                          alt="BMI Logo" 
-                        />
-                      </div>
-                      <div>
-                         <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase leading-none">BMI UNIVERSITY</h1>
-                         <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.4em] mt-3">Office of the University Registrar</p>
-                         <div className="mt-5 space-y-0.5 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                            <p>Official Academic Transcript • Verification Node: BMI-REG-{selectedStudent.id}</p>
-                         </div>
-                      </div>
-                   </div>
-                   <div className="text-right flex flex-col items-end">
-                      <h2 className="text-2xl font-black text-gray-900 tracking-tight uppercase leading-none">ACADEMIC RECORD</h2>
-                      <div className="mt-4 p-4 bg-gray-50 border border-gray-200 text-center min-w-[120px]">
-                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center">CUMULATIVE GPA</p>
-                         <p className="text-4xl font-black text-gray-900 leading-none">{cgpa}</p>
-                      </div>
-                   </div>
-                </div>
+                 {/* PROVISIONAL WATERMARK */}
+                 {transcriptType === 'Provisional' && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[0] overflow-hidden">
+                       <div className="rotate-[-35deg] text-[120px] font-black text-red-500/10 uppercase border-[20px] border-red-500/10 px-20 py-10 whitespace-nowrap select-none">
+                          Provisional
+                       </div>
+                    </div>
+                 )}
 
-                {/* Student Identification Profile */}
-                <div className="bg-gray-50 p-10 mb-10 border border-gray-100 grid grid-cols-2 gap-12">
-                   <div className="space-y-4">
-                      <div>
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">STUDENT IDENTITY</p>
-                         <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight leading-none">{selectedStudent.firstName} {selectedStudent.lastName}</h3>
-                         <p className="text-xs font-bold text-[#4B0082] mt-2">{selectedStudent.id}</p>
-                      </div>
-                      <div>
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">ACADEMIC DOMAIN</p>
-                         <p className="text-sm font-bold text-gray-700 uppercase">{selectedStudent.faculty}</p>
-                         <p className="text-[10px] font-bold text-gray-400 uppercase">{selectedStudent.department}</p>
-                      </div>
-                   </div>
-                   <div className="space-y-4 text-right">
-                      <div>
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">ENROLLMENT PROFILE</p>
-                         <p className="text-sm font-bold text-gray-700 uppercase leading-none">Degree Level: {selectedStudent.careerPath}</p>
-                         <p className="text-[10px] font-bold text-gray-400 uppercase mt-1">Admission Year: {selectedStudent.admissionYear}</p>
-                      </div>
-                      <div>
-                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">DATE OF ISSUE</p>
-                         <p className="text-sm font-bold text-gray-700 uppercase">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()}</p>
-                      </div>
-                   </div>
-                </div>
+                 <div className="flex flex-col items-center border-b-2 border-gray-900 pb-6 mb-8 relative z-10">
+                    <img 
+                      src={logo || "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png"} 
+                      className="h-24 mb-4 object-contain" 
+                      alt="BMI Logo"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png" }}
+                    />
+                    <h1 className="text-3xl font-serif font-bold tracking-tight text-gray-900 uppercase">BMI UNIVERSITY</h1>
+                    <p className="text-[10px] font-sans font-bold text-gray-500 uppercase tracking-[0.3em] mt-1">OFFICE OF THE INSTITUTIONAL REGISTRAR</p>
+                    <div className="mt-4 px-10 py-1.5 border-y-2 border-gray-900">
+                      <h2 className="text-lg font-serif font-bold uppercase tracking-[0.2em]">
+                        {transcriptType} Academic Transcript
+                        {transcriptType === 'Provisional' && <span className="ml-2 bg-gray-100 px-2 py-0.5 text-xs text-red-600 border border-red-200">| PERIOD: {selectedTerm.toUpperCase()}</span>}
+                      </h2>
+                    </div>
+                 </div>
 
-                {/* Course & Grade Matrix */}
-                <div className="relative overflow-hidden flex-1">
-                   {/* Watermark */}
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.02] rotate-[-25deg] select-none scale-[1.5] z-0">
-                      <h1 className="text-[120px] font-black uppercase text-gray-900">OFFICIAL TRANSCRIPT</h1>
-                   </div>
+                 <div className="grid grid-cols-2 gap-x-12 gap-y-2 mb-8 text-[12px] font-bold relative z-10">
+                    <div className="flex justify-between border-b border-gray-100 pb-1"><span>Year of study:</span><span className="w-1/2">4</span></div>
+                    <div className="flex justify-between border-b border-gray-100 pb-1"><span>Prog. of Study:</span><span className="w-1/2 uppercase">{selectedStudent.careerPath}</span></div>
+                    <div className="flex justify-between border-b border-gray-100 pb-1"><span className="uppercase">FACULTY OF</span><span className="w-1/2 uppercase">{selectedStudent.faculty}</span></div>
+                    <div className="flex justify-between border-b border-gray-100 pb-1"><span>Student ID:</span><span className="w-1/2">{selectedStudent.id}</span></div>
+                    <div className="flex justify-between border-b border-gray-100 pb-1"><span>Date of Admission:</span><span className="w-1/2">27/08/2022</span></div>
+                    <div className="flex justify-between border-b border-gray-100 pb-1"><span>Date of Graduation:</span><span className="w-1/2">21/12/2026</span></div>
+                 </div>
 
-                   <table className="w-full text-left border-collapse relative z-10 bg-transparent">
+                 <div className="border-[1.5px] border-gray-900 mb-2 relative z-10">
+                   <table className="w-full text-left text-[11px] border-collapse">
                       <thead>
-                         <tr className="border-b-2 border-gray-900 text-[10px] font-black text-gray-900 uppercase tracking-widest">
-                            <th className="py-4">COURSE CODE</th>
-                            <th className="py-4">COURSE DESCRIPTION</th>
-                            <th className="py-4 text-center">TERM</th>
-                            <th className="py-4 text-center">CREDITS</th>
-                            <th className="py-4 text-center">GRADE</th>
-                            <th className="py-4 text-center">POINTS</th>
+                         <tr className="border-b-[1.5px] border-gray-900 font-bold uppercase bg-gray-50">
+                            <th className="py-2.5 px-3 border-r border-gray-900 w-32">Course Code</th>
+                            <th className="py-2.5 px-3 border-r border-gray-900">Course Description</th>
+                            <th className="py-2.5 px-3 border-r border-gray-900 w-28 text-center">Academic Hours</th>
+                            <th className="py-2.5 px-3 w-16 text-center">Grade</th>
                          </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody>
                          {currentRecords.map((rec, i) => (
-                           <tr key={i} className="text-xs font-bold text-gray-700">
-                              <td className="py-4 font-mono">{rec.courseCode}</td>
-                              <td className="py-4 uppercase tracking-tight">{rec.courseName}</td>
-                              <td className="py-4 text-center uppercase text-[10px]">{rec.term}</td>
-                              <td className="py-4 text-center">{rec.credits.toFixed(1)}</td>
-                              <td className="py-4 text-center font-black">{rec.grade}</td>
-                              <td className="py-4 text-center">{rec.points.toFixed(1)}</td>
+                           <tr key={i} className="border-b border-gray-300 last:border-0">
+                              <td className="py-1.5 px-3 border-r border-gray-900 font-mono">{rec.courseCode}</td>
+                              <td className="py-1.5 px-3 border-r border-gray-900 uppercase">{rec.courseName}</td>
+                              <td className="py-1.5 px-3 border-r border-gray-900 text-center">{(rec.credits).toFixed(2)}</td>
+                              <td className="py-1.5 px-3 text-center font-bold">{rec.grade}</td>
                            </tr>
                          ))}
                       </tbody>
-                      <tfoot>
-                         <tr className="border-t-2 border-gray-900">
-                            <td colSpan={3} className="py-6 text-right font-black uppercase text-[10px] tracking-widest">CUMULATIVE TOTALS:</td>
-                            <td className="py-6 text-center font-black">{currentRecords.reduce((acc, curr) => acc + curr.credits, 0).toFixed(1)}</td>
-                            <td className="py-6"></td>
-                            <td className="py-6 text-center font-black">{currentRecords.reduce((acc, curr) => acc + (curr.points * curr.credits), 0).toFixed(1)}</td>
-                         </tr>
-                      </tfoot>
                    </table>
+                 </div>
 
-                   <div className="mt-16 flex justify-between items-end relative z-10">
-                      <div className="max-w-xs space-y-6">
-                         <p className="text-[9px] font-black uppercase text-gray-400 leading-relaxed border-l-2 border-gray-100 pl-4">
-                            Grading Scale: A (4.00) 90-100%, B (3.00) 80-89%, C (2.00) 70-79%, D (1.00) 60-69%, F (0.00) Below 60%. 
-                            Institutional accreditation: BMI Global Academic Standards Board.
-                         </p>
-                         <div className="flex gap-4">
-                            <div className="relative w-20 h-20 flex items-center justify-center">
-                               <div className="absolute inset-0 border-4 border-dashed border-[#4B0082]/20 rounded-full animate-[spin_10s_linear_infinite]"></div>
-                               <div className="w-16 h-16 bg-[#4B0082] rounded-full flex items-center justify-center text-[#FFD700] shadow-xl border-4 border-white ring-2 ring-[#4B0082]/30">
-                                  <Award size={32} />
-                               </div>
-                               <div className="absolute -bottom-2 whitespace-nowrap text-[7px] font-black text-[#4B0082] bg-white px-1 uppercase tracking-tighter">OFFICIAL SEAL</div>
-                            </div>
-                            <div className="p-3 border border-gray-200 rounded-none flex items-center justify-center"><GraduationCap size={24} className="text-gray-900" /></div>
-                         </div>
-                      </div>
-                      <div className="text-center relative">
-                         <div className="absolute -top-12 -left-8 pointer-events-none opacity-40 rotate-[-10deg]">
-                            <div className="border-4 border-blue-600 px-6 py-2 rounded-lg text-blue-600 font-black text-xl uppercase italic tracking-widest shadow-sm">
-                               ELECTRONICALLY<br/>VERIFIED
-                            </div>
-                         </div>
-                         <div className="mb-2 font-['Brush_Script_MT',cursive] text-2xl text-[#4B0082] italic transform -rotate-1 select-none">
-                            Alice Kwamboka
-                         </div>
-                         <div className="w-56 h-[2px] bg-gray-900 mx-auto"></div>
-                         <p className="text-[9px] font-black uppercase text-gray-900 mt-2 tracking-[0.2em]">Institutional Registrar</p>
-                      </div>
-                   </div>
-                </div>
+                 <div className="border-b-[1.5px] border-gray-900 py-3 text-[12px] font-bold relative z-10">
+                    <div className="flex gap-12">
+                       <span>Averages :&gt; | Current..: {cumulativeAvg}%</span>
+                       <span>| Cumulative..: {cumulativeAvg}%</span>
+                    </div>
+                 </div>
+
+                 <div className="py-4 text-[12px] font-bold border-b-[1.5px] border-gray-900 mb-6 relative z-10">
+                    <div className="flex gap-4">
+                       <span className="flex-shrink-0">Recommendation:</span>
+                       <p className="uppercase leading-tight">AWARDED THE DEGREE OF {selectedStudent.careerPath} WITH SECOND CLASS HONOURS, UPPER DIVISION.</p>
+                    </div>
+                 </div>
+
+                 {/* GRADING SYSTEM LEGEND */}
+                 <div className="border-[1.5px] border-gray-900 p-4 text-[9px] font-bold relative z-10">
+                    <p className="underline mb-2 uppercase tracking-widest text-[10px]">Grading System Legend</p>
+                    <div className="grid grid-cols-3 gap-y-1 gap-x-4">
+                       <span>A : (70% - 100%) - Excellent</span><span>B : (60% - 69%) - Very Good</span><span>C : (50% - 59%) - Good</span>
+                       <span>D : (40% - 49%) - Fair</span><span>F : (Below 40%) - Fail</span><span className="text-right"># Audited Component</span>
+                    </div>
+                 </div>
+
+                 {/* DUAL SIGNATURE SECTION - ONE LINE CONDENSED */}
+                 <div className="grid grid-cols-2 gap-8 mt-6 relative z-10">
+                    <div className="flex flex-col items-center">
+                       <div className="w-full border-b border-gray-900 pb-0.5 relative text-center flex justify-center items-baseline gap-2">
+                          <span className="font-serif italic text-lg text-[#4B0082]/70 whitespace-nowrap pointer-events-none">
+                             {getDeanName(selectedStudent.faculty)}
+                          </span>
+                          <span className="text-[8px] font-bold uppercase tracking-widest opacity-60">— Dean of Faculty</span>
+                       </div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                       <div className="w-full border-b border-gray-900 pb-0.5 relative text-center flex justify-center items-baseline gap-2">
+                          <span className="font-serif italic text-lg text-[#4B0082]/70 whitespace-nowrap pointer-events-none">
+                             Prof. Isaac Sigei
+                          </span>
+                          <span className="text-[8px] font-bold uppercase tracking-widest opacity-60">— Institutional Registrar</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="mt-6 flex justify-between items-baseline px-1 border-t border-gray-100 pt-2 relative z-10">
+                    <div className="flex items-center gap-4 text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+                       <span>Date of Issue: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                       <span>|</span>
+                       <span>Instance ID: BMI-TR-{selectedStudent.id.split('-').pop()}-{Date.now().toString().slice(-6)}</span>
+                    </div>
+                 </div>
+
+                 <div className="absolute bottom-40 left-1/2 transform -translate-x-1/2 pointer-events-none z-[40] rotate-[-15deg] opacity-[0.1]">
+                    <div className="border-[8px] border-green-800 px-12 py-4 rounded-full flex flex-col items-center justify-center bg-white/20">
+                       <h1 className="text-6xl font-black text-green-800 uppercase leading-none">VERIFIED</h1>
+                       <p className="text-[12px] font-bold text-green-800 tracking-[0.2em] mt-1 text-center">BMI UNIVERSITY OFFICE OF REGISTRAR</p>
+                    </div>
+                 </div>
               </div>
 
-              {/* Floating Transcript Actions */}
-              <div className="mt-12 pt-10 border-t-2 border-[#FFD700] flex flex-wrap gap-4 items-center justify-between no-print">
-                 <div className="flex gap-4">
-                    <button 
-                      onClick={() => window.print()}
-                      className="flex items-center gap-3 px-8 py-4 bg-[#FFD700] text-[#4B0082] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-white transition-all transform active:scale-95"
-                    >
-                       <Printer size={18} /> Print Official Copy
-                    </button>
-                    <button 
-                      onClick={() => alert('Transcript encoded as PDF with encrypted digital seal.')}
-                      className="flex items-center gap-3 px-8 py-4 bg-gray-800 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-black transition-all"
-                    >
-                       <Download size={18} /> Download Audit PDF
-                    </button>
-                    <button 
-                      onClick={() => alert(`Digital Transcript link dispatched to student: ${selectedStudent.email}`)}
-                      className="flex items-center gap-3 px-8 py-4 bg-white/10 text-white text-[11px] font-black uppercase tracking-[0.2em] hover:bg-white/20 transition-all border border-white/20"
-                    >
-                       <Mail size={18} /> Share Digital Link
-                    </button>
+              <div className="w-full mt-6 flex flex-wrap gap-4 items-center justify-between no-print p-6 bg-gray-900/90 backdrop-blur-xl border border-white/10 shadow-2xl">
+                 <div className="flex flex-wrap gap-4 items-center">
+                    <div className="flex bg-gray-800 p-1 border border-white/10 rounded-none mr-2">
+                       <button 
+                         onClick={() => setTranscriptType('Official')}
+                         className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${transcriptType === 'Official' ? 'bg-[#FFD700] text-[#4B0082]' : 'text-gray-400 hover:text-white'}`}
+                       >Complete Transcript</button>
+                       <button 
+                         onClick={() => setTranscriptType('Provisional')}
+                         className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${transcriptType === 'Provisional' ? 'bg-[#FFD700] text-[#4B0082]' : 'text-gray-400 hover:text-white'}`}
+                       >Provisional Slice</button>
+                    </div>
+                    {transcriptType === 'Provisional' && (
+                       <div className="flex items-center gap-2 bg-gray-800 px-3 py-2 border border-white/10">
+                          <Calendar size={14} className="text-[#FFD700]" />
+                          <select 
+                            value={selectedTerm}
+                            onChange={(e) => setSelectedTerm(e.target.value)}
+                            className="bg-transparent border-none text-[10px] font-black uppercase text-white outline-none cursor-pointer"
+                          >
+                             {terms.map(t => <option key={t} value={t} className="bg-gray-800">{t}</option>)}
+                          </select>
+                       </div>
+                    )}
+                    <div className="h-8 w-px bg-white/10 mx-2"></div>
+                    <button onClick={() => handlePrint('print')} className="flex items-center gap-2 px-6 py-3 bg-[#4B0082] text-white text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg"><Printer size={16} /> Print</button>
+                    <button onClick={() => handlePrint('download')} className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg"><Download size={16} /> PDF</button>
+                    <button onClick={() => handleShare('whatsapp')} className="flex items-center gap-2 px-6 py-3 bg-[#25D366] text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow-lg"><MessageCircle size={16} /> WhatsApp</button>
                  </div>
-                 <button 
-                  onClick={() => setShowTranscript(false)}
-                  className="p-4 bg-red-500 text-white hover:bg-red-600 transition-all shadow-xl"
-                 >
-                    <X size={24} />
-                 </button>
+                 <button onClick={() => setShowTranscript(false)} className="p-4 bg-red-600 text-white hover:bg-red-700 transition-all shadow-xl"><X size={20} /></button>
               </div>
            </div>
         </div>
@@ -456,12 +467,12 @@ const Transcripts: React.FC<TranscriptsProps> = ({ students, courses, logo }) =>
       <style>{`
         @media print {
           .no-print { display: none !important; }
-          body { background: white !important; }
-          .fixed { position: static !important; }
-          .shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] { box-shadow: none !important; }
+          body { background: white !important; margin: 0 !important; padding: 0 !important; visibility: hidden; }
+          #official-transcript-root { visibility: visible !important; display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 15mm !important; box-shadow: none !important; border: none !important; z-index: 9999 !important; }
+          #official-transcript-root * { visibility: visible !important; }
+          @page { size: A4; margin: 0; }
         }
       `}</style>
-
     </div>
   );
 };

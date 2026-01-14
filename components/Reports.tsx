@@ -28,10 +28,10 @@ const Reports: React.FC = () => {
          <div className="lg:col-span-2 space-y-8">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
                <h3 className="font-bold text-gray-900 dark:text-white mb-8 flex items-center gap-2"><Target size={20} className="text-[#4B0082]" /> Departmental Enrollment Reach</h3>
-               <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
+               <div className="h-64 min-h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <BarChart data={enrollmentData}>
-                       <XAxis dataKey="name" tick={{fontSize: 10, fill: '#999'}} axisLine={false} tickLine={false} />
+                       <XAxis dataKey="name" tick={{fontSize: 10, fill: '#9CA3AF'}} axisLine={false} tickLine={false} />
                        <YAxis hide />
                        <Tooltip cursor={{fill: '#f8fafc'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}} />
                        <Bar dataKey="val" radius={[4, 4, 0, 0]}>
@@ -60,8 +60,8 @@ const Reports: React.FC = () => {
 
          <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
             <h3 className="font-bold text-gray-900 dark:text-white mb-6">Financial Allocation</h3>
-            <div className="h-64 flex justify-center">
-               <ResponsiveContainer width="100%" height="100%">
+            <div className="h-64 min-h-[300px] flex justify-center">
+               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <PieChart>
                     <Pie data={enrollmentData} dataKey="val" innerRadius={60} outerRadius={80} paddingAngle={5}>
                        {enrollmentData.map((entry, index) => (
