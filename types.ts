@@ -34,6 +34,7 @@ export interface Student {
   firstName: string;
   lastName: string;
   middleName?: string;
+  gender: 'Male' | 'Female';
   email: string;
   phone: string;
   faculty: string;
@@ -101,4 +102,23 @@ export interface LibraryItem {
   description: string;
   downloadUrl?: string;
   coverImage?: string;
+}
+
+export interface Hostel {
+  id: string;
+  name: string;
+  type: 'Male' | 'Female';
+  capacity: number;
+  location: string;
+  status: 'Available' | 'Full' | 'Near Capacity' | 'Maintenance';
+}
+
+export interface RoomAssignment {
+  id: string;
+  studentId: string;
+  studentName: string;
+  hostelId: string;
+  roomNumber: string;
+  checkInDate: string;
+  status: 'Active' | 'Exited' | 'Waitlist';
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, User, GraduationCap, Heart, Upload } from 'lucide-react';
 import { Student } from '../types';
@@ -16,6 +17,7 @@ const StudentRegistrationModal: React.FC<StudentRegistrationModalProps> = ({ isO
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    gender: 'Male' as Student['gender'],
     email: '',
     faculty: 'General',
     department: 'Undeclared',
@@ -31,6 +33,7 @@ const StudentRegistrationModal: React.FC<StudentRegistrationModalProps> = ({ isO
         setFormData({
           firstName: editData.firstName,
           lastName: editData.lastName,
+          gender: editData.gender,
           email: editData.email,
           faculty: editData.faculty,
           department: editData.department,
@@ -45,6 +48,7 @@ const StudentRegistrationModal: React.FC<StudentRegistrationModalProps> = ({ isO
         setFormData({
           firstName: '',
           lastName: '',
+          gender: 'Male',
           email: '',
           faculty: 'General',
           department: 'Undeclared',
@@ -155,13 +159,15 @@ const StudentRegistrationModal: React.FC<StudentRegistrationModalProps> = ({ isO
                        />
                     </div>
                     <div className="space-y-1">
-                       <label className="text-xs font-bold uppercase text-gray-500">Phone</label>
-                       <input 
-                        type="text" 
-                        className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none focus:ring-1 focus:ring-[#4B0082]" 
-                        value={formData.phone}
-                        onChange={e => setFormData({...formData, phone: e.target.value})}
-                       />
+                       <label className="text-xs font-bold uppercase text-gray-500">Gender</label>
+                       <select 
+                         className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none focus:ring-1 focus:ring-[#4B0082] font-semibold"
+                         value={formData.gender}
+                         onChange={e => setFormData({...formData, gender: e.target.value as any})}
+                       >
+                         <option value="Male">Male</option>
+                         <option value="Female">Female</option>
+                       </select>
                     </div>
                     
                     <div className="space-y-1">
@@ -174,19 +180,29 @@ const StudentRegistrationModal: React.FC<StudentRegistrationModalProps> = ({ isO
                         placeholder="student@bmi.edu"
                        />
                     </div>
-                    <div className="md:col-span-2 space-y-1">
-                       <label className="text-xs font-bold uppercase text-gray-500">Address (Street/County)</label>
-                       <input type="text" className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none" />
+                    <div className="space-y-1">
+                       <label className="text-xs font-bold uppercase text-gray-500">Phone</label>
+                       <input 
+                        type="text" 
+                        className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none focus:ring-1 focus:ring-[#4B0082]" 
+                        value={formData.phone}
+                        onChange={e => setFormData({...formData, phone: e.target.value})}
+                       />
                     </div>
-
                     <div className="space-y-1">
                        <label className="text-xs font-bold uppercase text-gray-500">SSN</label>
                        <input type="text" className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none font-mono" placeholder="000-00-0000" />
+                    </div>
+
+                    <div className="md:col-span-2 space-y-1">
+                       <label className="text-xs font-bold uppercase text-gray-500">Address (Street/County)</label>
+                       <input type="text" className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none" />
                     </div>
                     <div className="space-y-1">
                        <label className="text-xs font-bold uppercase text-gray-500">City</label>
                        <input type="text" className="w-full px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-none outline-none" />
                     </div>
+                    
                     <div className="space-y-1">
                        <label className="text-xs font-bold uppercase text-gray-500">State/Zip</label>
                        <div className="flex gap-2">

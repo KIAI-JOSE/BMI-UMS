@@ -72,6 +72,8 @@ const Students: React.FC<StudentsProps> = ({ theme, students, setStudents, total
         id: `BMI-2024-${Math.floor(Math.random() * 999)}`,
         firstName: studentData.firstName || 'New',
         lastName: studentData.lastName || 'Student',
+        // FIX: Added required gender property to satisfy Student type requirement
+        gender: studentData.gender || 'Male',
         email: studentData.email || `${studentData.firstName?.toLowerCase()}@bmi.edu`,
         phone: studentData.phone || '+254...',
         faculty: studentData.faculty || 'General',

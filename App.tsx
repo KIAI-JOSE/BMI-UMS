@@ -27,7 +27,7 @@ import { Student, StaffMember, Transaction, Course, LibraryItem } from './types'
 const generateInitialStudents = (): Student[] => {
   const students: Student[] = [
     { 
-      id: 'BMI-2022-001', firstName: 'Aaron', lastName: 'Keitany', email: 'aaron.k@bmi.edu', phone: '+254 712 345 678',
+      id: 'BMI-2022-001', firstName: 'Aaron', lastName: 'Keitany', gender: 'Male', email: 'aaron.k@bmi.edu', phone: '+254 712 345 678',
       faculty: 'Theology', department: 'Biblical Studies', careerPath: 'Systematic Hermeneutics', admissionYear: '2022',
       enrollmentTerm: 'Fall 2022', status: 'Active', standing: 'Honor Roll', gpa: 3.85, avatarColor: 'bg-indigo-600', photoZoom: 1.1
     }
@@ -55,6 +55,7 @@ const generateInitialStudents = (): Student[] => {
       id: `BMI-2023-${i.toString().padStart(3, '0')}`,
       firstName: fName,
       lastName: lName,
+      gender: i % 2 === 0 ? 'Male' : 'Female',
       email: `${fName.toLowerCase()}.${lName.toLowerCase()}${i}@bmi.edu`,
       phone: `+1 555-000-${1000 + i}`,
       faculty: i % 2 === 0 ? 'Theology' : 'ICT',
@@ -228,7 +229,7 @@ const App: React.FC = () => {
                const [first, last] = name.split(' ');
                const newStud: Student = {
                  id: `BMI-2024-${Math.floor(Math.random() * 999).toString().padStart(3, '0')}`,
-                 firstName: first || 'New', lastName: last || 'Student', email: `${first?.toLowerCase() || 'new'}.${last?.toLowerCase() || 'student'}@bmi.edu`, phone: '+254 700 000 000', faculty: 'Undeclared', department: 'Undeclared', careerPath: 'Freshman', admissionYear: '2024', enrollmentTerm: 'Fall 2024', status: 'Active', standing: 'Good', gpa: 4.0, avatarColor: 'bg-indigo-500', photoZoom: 1.0
+                 firstName: first || 'New', lastName: last || 'Student', gender: 'Male', email: `${first?.toLowerCase() || 'new'}.${last?.toLowerCase() || 'student'}@bmi.edu`, phone: '+254 700 000 000', faculty: 'Undeclared', department: 'Undeclared', careerPath: 'Freshman', admissionYear: '2024', enrollmentTerm: 'Fall 2024', status: 'Active', standing: 'Good', gpa: 4.0, avatarColor: 'bg-indigo-500', photoZoom: 1.0
                };
                setStudents(prev => [newStud, ...prev]);
             }} onAddTransaction={(amt) => {
@@ -248,7 +249,7 @@ const App: React.FC = () => {
         {currentView === 'exams' && <Exams />}
         {currentView === 'transcripts' && <Transcripts students={students} courses={courses} logo={logo} />}
         {currentView === 'library' && <Library library={library} setLibrary={setLibrary} courses={courses} />}
-        {currentView === 'hostels' && <Hostels />}
+        {currentView === 'hostels' && <Hostels students={students} />}
         {currentView === 'medical' && <Medical />}
         {currentView === 'inventory' && <Inventory />}
         {currentView === 'alumni' && <Alumni />}
