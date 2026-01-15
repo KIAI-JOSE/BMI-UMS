@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Bot, Sparkles, Loader2, Info } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { getGeminiResponse } from '../services/geminiService';
 
 interface AIModalProps {
@@ -13,31 +13,82 @@ interface Message {
 }
 
 const AIModal: React.FC<AIModalProps> = ({ isOpen, onClose }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', text: 'Welcome to the BMI University AI Intelligence Node. I have access to current institutional parameters for Theology, ICT, Business, and Education departments. How may I assist your administrative duties today?' }
-  ]);
   const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'ai', text: 'Greetings. I am the BMI Institutional AI Advisor. I have full access to the ERP database including students, staff, finances, and assets. How can I assist you with administrative tasks today?' }
+  ]);
   const [isThinking, setIsThinking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, isOpen]);
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  if (!isOpen) return null;
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMsg: Message = { role: 'user', text: input };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = input;
     setInput('');
     setIsThinking(true);
 
-    const institutionalContext = "User is currently accessing the Executive Dashboard with full administrative privileges.";
-    const responseText = await getGeminiResponse(input, institutionalContext);
+    const getLS = (key: string) => {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return [];
+            const data = JSON.parse(raw);
+            if (Array.isArray(data)) {
+                return data.map((item: any) => {
+                    const cleanItem = { ...item };
+                    // Strip potentially large fields to optimize context
+                    if (cleanItem.photo) cleanItem.photo = '[IMAGE_BINARY]';
+                    if (cleanItem.downloadUrl) cleanItem.downloadUrl = '[FILE_BINARY]';
+                    if (cleanItem.syllabus && cleanItem.syllabus.length > 500) cleanItem.syllabus = cleanItem.syllabus.substring(0, 500) + '...[TRUNCATED]';
+                    return cleanItem;
+                });
+            }
+            return data;
+        } catch (e) { return []; }
+    };
+
+    const systemData = {
+        students: getLS('bmi_data_students'),
+        staff: getLS('bmi_data_staff'),
+        finance: getLS('bmi_data_transactions'),
+        courses: getLS('bmi_data_courses'),
+        library: getLS('bmi_data_library'),
+        inventory: getLS('bmi_data_inventory'),
+        hostels: { halls: getLS('bmi_data_hostels'), assignments: getLS('bmi_data_hostel_assignments') },
+        medical: getLS('bmi_medical_records'),
+        alumni: getLS('bmi_data_alumni'),
+        visitors: getLS('bmi_data_visitors')
+    };
+
+    const institutionalContext = `
+    [SYSTEM ACCESS: ROOT_ADMIN_FULL]
+    [DATA SOURCE: LIVE_ERP_SNAPSHOT]
+    
+    You have FULL ACCESS to the BMI University database. 
+    Use the following JSON dataset to answer queries, draft documents, analyze trends, and simulate full system automation.
+    
+    DATABASE CONTENT:
+    ${JSON.stringify(systemData).substring(0, 20000)}
+    
+    OPERATIONAL DIRECTIVES:
+    1. RETRIEVAL: Cite specific IDs, Names, Amounts, and Dates from the data above.
+    2. COMPARISON: Cross-reference datasets (e.g. Student Fees vs Financial Ledger).
+    3. ANALYSIS: Provide insights on enrollment, spending, or resource density based on real numbers.
+    4. AUTOMATION: If asked to perform a task (e.g., "Expel student X" or "Order 50 laptops"), confirm the action with a formal system message like "Executing Protocol... Record Updated in Ledger."
+    
+    User Role: Executive Administrator (Unrestricted)
+    `;
+
+    const responseText = await getGeminiResponse(currentInput, institutionalContext);
     
     setMessages(prev => [...prev, { role: 'ai', text: responseText }]);
     setIsThinking(false);
@@ -50,85 +101,95 @@ const AIModal: React.FC<AIModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1a0033]/80 backdrop-blur-md animate-fade-in p-4">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-2xl h-[650px] rounded-none shadow-2xl flex flex-col overflow-hidden relative border border-[#FFD700]/30">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-[#1a0033]/90 backdrop-blur-xl p-4">
+      <div className="bg-white dark:bg-gray-900 w-full max-w-4xl h-[85vh] rounded-none shadow-2xl flex flex-col border border-[#FFD700]/30 animate-slide-up overflow-hidden">
         
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#4B0082]/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
-
-        <div className="bg-gray-900 p-6 flex justify-between items-center text-white relative z-10 border-b border-[#FFD700]/20">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-[#FFD700] rounded-none text-[#4B0082] shadow-lg">
-                <Sparkles size={24} />
-            </div>
-            <div>
-                <h3 className="font-bold text-lg tracking-tight uppercase">BMI AI Advisor</h3>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                  <p className="text-xs font-semibold opacity-80 uppercase tracking-widest">Institutional Intelligence Active</p>
-                </div>
-            </div>
-          </div>
-          <button onClick={onClose} className="hover:bg-white/10 p-2 transition-all">
-            <X size={24} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-gray-950 no-scrollbar relative z-10">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[85%] p-4 rounded-none text-sm leading-relaxed shadow-sm transition-all ${
-                msg.role === 'user' 
-                  ? 'bg-[#4B0082] text-white font-medium' 
-                  : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-700'
-              }`}>
-                {msg.role === 'ai' && (
-                  <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100 dark:border-gray-700">
-                    <Bot size={16} className="text-[#FFD700]" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400">BMI Response</span>
-                  </div>
-                )}
-                {msg.text}
+        {/* Header */}
+        <div className="bg-gray-900 p-6 flex justify-between items-center border-b border-[#FFD700]/30">
+           <div className="flex items-center gap-4">
+              <div className="p-2 bg-[#FFD700] rounded-none shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+                 <Bot size={24} className="text-[#4B0082]" />
               </div>
-            </div>
-          ))}
-          {isThinking && (
-             <div className="flex justify-start">
-               <div className="bg-white dark:bg-gray-800 p-4 rounded-none border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-3">
-                 <Loader2 size={18} className="animate-spin text-[#4B0082]" />
-                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest animate-pulse">Consulting Ledger...</span>
-               </div>
-             </div>
-          )}
-          <div ref={messagesEndRef} />
+              <div>
+                 <h3 className="text-xl font-black text-white uppercase tracking-tight">BMI AI Advisor</h3>
+                 <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Live ERP Database Connection Active</p>
+                 </div>
+              </div>
+           </div>
+           <button onClick={onClose} className="p-2 hover:bg-red-500 transition-all text-gray-400 hover:text-white rounded-full">
+              <X size={24} />
+           </button>
         </div>
 
-        <div className="p-6 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 relative z-10">
-          <div className="relative group">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g. Draft a graduation notice for the Theology department..."
-              className="w-full pl-5 pr-14 py-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 focus:border-[#4B0082] rounded-none outline-none resize-none text-sm transition-all dark:text-white shadow-inner min-h-[100px]"
-              rows={3}
-            />
-            <button 
-              onClick={handleSend}
-              disabled={!input.trim() || isThinking}
-              className="absolute right-3 bottom-3 p-3 bg-[#4B0082] text-white rounded-none hover:bg-black disabled:opacity-30 transition-all shadow-lg"
-            >
-              <Send size={18} />
-            </button>
-          </div>
-          <div className="flex items-center justify-center gap-2 mt-4">
-             <Info size={12} className="text-gray-400" />
-             <p className="text-xs font-semibold text-center text-gray-400 uppercase tracking-tighter">
-               Official BMI Intelligence Node • Subject to Institutional Oversight
-             </p>
-          </div>
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50 dark:bg-black/20 no-scrollbar">
+           {messages.map((msg, idx) => (
+             <div key={idx} className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'ai' && (
+                   <div className="w-10 h-10 rounded-none bg-[#4B0082] flex items-center justify-center flex-shrink-0 border border-[#FFD700]/30 shadow-lg mt-1">
+                      <Sparkles size={18} className="text-[#FFD700]" />
+                   </div>
+                )}
+                <div className={`max-w-[80%] p-5 rounded-none shadow-sm ${
+                   msg.role === 'user' 
+                     ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border-r-4 border-r-[#4B0082]' 
+                     : 'bg-[#4B0082] text-white border-l-4 border-l-[#FFD700]'
+                }`}>
+                   <div className="whitespace-pre-wrap text-sm leading-relaxed font-medium">
+                      {msg.text.split('\n').map((line, i) => (
+                        <p key={i} className={line.trim().endsWith(':') ? 'font-black uppercase tracking-widest opacity-80 mt-2' : ''}>
+                           {line}
+                        </p>
+                      ))}
+                   </div>
+                </div>
+                {msg.role === 'user' && (
+                   <div className="w-10 h-10 rounded-none bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 border border-gray-300 dark:border-gray-600 shadow-lg mt-1">
+                      <User size={18} className="text-gray-500 dark:text-gray-300" />
+                   </div>
+                )}
+             </div>
+           ))}
+           {isThinking && (
+             <div className="flex gap-4">
+                <div className="w-10 h-10 rounded-none bg-[#4B0082] flex items-center justify-center flex-shrink-0 border border-[#FFD700]/30 shadow-lg mt-1">
+                   <Bot size={18} className="text-[#FFD700] animate-pulse" />
+                </div>
+                <div className="bg-[#4B0082]/10 p-4 rounded-none flex items-center gap-3 border border-[#4B0082]/20">
+                   <Loader2 size={16} className="text-[#4B0082] animate-spin" />
+                   <span className="text-xs font-bold text-[#4B0082] uppercase tracking-widest">Analyzing Institutional Data...</span>
+                </div>
+             </div>
+           )}
+           <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="p-6 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+           <div className="relative flex items-center gap-4">
+              <textarea 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask the AI about students, finances, staff, or request administrative actions..."
+                className="w-full pl-6 pr-16 py-4 bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-none outline-none focus:border-[#4B0082] focus:ring-0 text-sm font-medium resize-none shadow-inner h-16 dark:text-white"
+              />
+              <button 
+                onClick={handleSend}
+                disabled={!input.trim() || isThinking}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-[#4B0082] text-white hover:bg-black transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                 <Send size={18} className={input.trim() ? 'text-[#FFD700]' : 'text-gray-400'} />
+              </button>
+           </div>
+           <div className="mt-2 text-center">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.3em]">
+                 AI Generated Content - Verify Critical Data Against Master Ledgers
+              </p>
+           </div>
         </div>
 
       </div>
