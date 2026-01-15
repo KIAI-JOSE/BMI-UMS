@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const getGeminiResponse = async (prompt: string, context?: string): Promise<string> => {
@@ -18,6 +17,19 @@ export const getGeminiResponse = async (prompt: string, context?: string): Promi
     - Motto: "Excellence in Faith and Knowledge"
     - Location: Main campus in a serene environment with Bethlehem Hall and Eden Residence.
     
+    Formatting Rules:
+    - NEVER use Markdown stars (like ** or *).
+    - NEVER use HTML tags (like <b>, <i>, <br>).
+    - Use ONLY plain text.
+    - Put titles, subtitles, and headers on their own lines.
+    - End headers with a colon (:) to allow the system to identify and bold them visually.
+    
+    Standard Signature Block (Use Exactly):
+    In Excellence,
+    Office of the Registrar
+    BMI University
+    “Excellence in Faith and Knowledge”
+    
     Your role is to help administrators with data analysis, drafting official communications, summarizing financial reports, and providing academic insights. 
     Always be professional, concise, and helpful. Use institutional terminology where appropriate.
     
@@ -30,7 +42,7 @@ export const getGeminiResponse = async (prompt: string, context?: string): Promi
         systemInstruction: systemInstruction,
         temperature: 0.7,
         topP: 0.95,
-        thinkingConfig: { thinkingBudget: 0 } // Disable thinking to reduce latency for standard responses
+        thinkingConfig: { thinkingBudget: 0 } 
       }
     });
     
@@ -47,18 +59,20 @@ export const extractMetadataFromDoc = async (base64Data: string, fileName: strin
     const data = base64Data.split(',')[1] || base64Data;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', // Hyper-optimized model selection for speed
-      contents: [
-        {
-          inlineData: {
-            mimeType: 'application/pdf',
-            data: data
+      model: 'gemini-3-flash-preview',
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: 'application/pdf',
+              data: data
+            }
+          },
+          {
+            text: `Extremely brief JSON for ${fileName}: title, author, year, category(Theology/ICT/Business/Education/General), description(max 20 words).`
           }
-        },
-        {
-          text: `Extremely brief JSON for ${fileName}: title, author, year, category(Theology/ICT/Business/Education/General), description(max 20 words).`
-        }
-      ],
+        ]
+      },
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -72,9 +86,9 @@ export const extractMetadataFromDoc = async (base64Data: string, fileName: strin
           },
           required: ["title", "author", "year", "category", "description"]
         },
-        thinkingConfig: { thinkingBudget: 0 }, // Kill thinking overhead
-        maxOutputTokens: 250, // Minimize output stream for speed
-        temperature: 0.1 // Faster deterministic generation
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 250,
+        temperature: 0.1
       }
     });
 

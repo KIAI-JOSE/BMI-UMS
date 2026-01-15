@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
@@ -252,9 +251,10 @@ const App: React.FC = () => {
         {currentView === 'hostels' && <Hostels students={students} />}
         {currentView === 'medical' && <Medical students={students} />}
         {currentView === 'inventory' && <Inventory />}
-        {currentView === 'alumni' && <Alumni />}
+        {currentView === 'alumni' && <Alumni students={students} />}
         {currentView === 'visitors' && <Visitors />}
         {currentView === 'reports' && <Reports />}
+        {currentView === 'sms' && <Communications students={students} staff={staff} />}
         
         <button onClick={() => setIsAIModalOpen(true)} className="fixed bottom-8 right-8 bg-gradient-to-r from-[#4B0082] to-[#6A0DAD] text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-30 group border-2 border-[#FFD700]/30">
           <Bot size={28} />
