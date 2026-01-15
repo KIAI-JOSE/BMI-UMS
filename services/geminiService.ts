@@ -44,12 +44,10 @@ export const getGeminiResponse = async (prompt: string, context?: string): Promi
 export const extractMetadataFromDoc = async (base64Data: string, fileName: string): Promise<any> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    // Clean base64 string
     const data = base64Data.split(',')[1] || base64Data;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-flash-lite-latest', // Optimized: Uses the fastest available model for high-speed extraction
+      model: 'gemini-3-flash-preview', // Hyper-optimized model selection for speed
       contents: [
         {
           inlineData: {
@@ -58,7 +56,7 @@ export const extractMetadataFromDoc = async (base64Data: string, fileName: strin
           }
         },
         {
-          text: `Directly extract metadata for BMI registry: Title, Author, Year, Category (Theology/ICT/Business/Education/General), and 2-sentence Description from file "${fileName}". Return JSON only.`
+          text: `Extremely brief JSON for ${fileName}: title, author, year, category(Theology/ICT/Business/Education/General), description(max 20 words).`
         }
       ],
       config: {
@@ -73,7 +71,10 @@ export const extractMetadataFromDoc = async (base64Data: string, fileName: strin
             description: { type: Type.STRING }
           },
           required: ["title", "author", "year", "category", "description"]
-        }
+        },
+        thinkingConfig: { thinkingBudget: 0 }, // Kill thinking overhead
+        maxOutputTokens: 250, // Minimize output stream for speed
+        temperature: 0.1 // Faster deterministic generation
       }
     });
 

@@ -206,10 +206,12 @@ const Library: React.FC<LibraryProps> = ({ library, setLibrary, courses }) => {
     setIsGeneratingSummary(false);
   };
 
+  // Fixed helper to ensure correct document rendering without external proxy dependencies
   const getSafeViewerUrl = (url: string) => {
     if (!url) return '';
-    if (url.startsWith('data:')) return url;
-    return `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+    // Data URLs (local uploads) are used directly for native embedding
+    // Web URLs are used directly to avoid Google GView proxy failures on private/restricted links
+    return url;
   };
 
   return (
@@ -595,7 +597,7 @@ const Library: React.FC<LibraryProps> = ({ library, setLibrary, courses }) => {
                     </div>
                     <div className="p-6 bg-purple-900/20 border border-purple-500/20">
                        <div className="flex items-center gap-3 mb-3"><ShieldCheck size={16} className="text-[#FFD700]" /><span className="text-[9px] font-black uppercase tracking-widest text-[#FFD700]">Legal Disclosure</span></div>
-                       <p className="text-[10px] text-gray-400 leading-relaxed font-medium">Browser restrictions may block internal PDF preview. If document content is not visible, utilize external access features.</p>
+                       <p className="text-[10px] text-gray-400 leading-relaxed font-medium">Native browser preview active. If the document matrix is not visible, utilize external access protocols or verify that the source archive is reachable.</p>
                     </div>
                  </div>
               </div>
@@ -603,7 +605,13 @@ const Library: React.FC<LibraryProps> = ({ library, setLibrary, courses }) => {
                  <div className="w-full h-full max-w-5xl bg-white shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col relative overflow-hidden">
                     {viewingResource.downloadUrl ? (
                       <div className="w-full h-full relative group">
-                        <iframe src={getSafeViewerUrl(viewingResource.downloadUrl)} className="w-full h-full border-none" title="BMI Knowledge Node" frameBorder="0" />
+                        {/* Fixed: Replacing unstable Google Viewer iframe with high-compatibility native object/embed element */}
+                        <embed 
+                          src={getSafeViewerUrl(viewingResource.downloadUrl)} 
+                          type="application/pdf"
+                          className="w-full h-full border-none bg-white" 
+                          title="BMI Knowledge Node"
+                        />
                         <div className="absolute top-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                            <div className="bg-black/80 backdrop-blur-md px-6 py-3 border border-white/20 flex items-center gap-4">
                               <span className="text-[10px] font-black uppercase tracking-widest">Document not loading?</span>
