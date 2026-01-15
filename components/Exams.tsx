@@ -325,6 +325,18 @@ const Exams: React.FC = () => {
           )}
         </div>
       </div>
+      
+      {/* Grading System Section */}
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-none border border-gray-100 dark:border-gray-700">
+         <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-6">Grading System Specification</h4>
+         <div className="grid grid-cols-5 gap-2 opacity-80">
+            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>A (70-100%)</span></div>
+            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>B (60-69%)</span></div>
+            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>C (50-59%)</span></div>
+            <div className="flex justify-between px-2 border-r border-gray-100 dark:border-gray-700"><span>D (40-49%)</span></div>
+            <div className="flex justify-between px-2 text-red-600 font-bold"><span>F ({"<"}40%)</span></div>
+         </div>
+      </div>
     </div>
   );
 };

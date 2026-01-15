@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
@@ -20,7 +21,7 @@ import Alumni from './components/Alumni';
 import Visitors from './components/Visitors';
 import Reports from './components/Reports';
 import { Bot } from 'lucide-react';
-import { Student, StaffMember, Transaction, Course } from './types';
+import { Student, StaffMember, Transaction, Course, LibraryItem } from './types';
 
 // Mock Data Generators
 const generateInitialStudents = (): Student[] => {
@@ -108,229 +109,40 @@ const initialTransactions: Transaction[] = [
 ];
 
 const initialCourses: Course[] = [
-  // --- SCHOOL OF THEOLOGY: DIPLOMA & UNDERGRADUATE ---
-  { 
-    id: 'CRS-THEO-099', 
-    name: 'Diploma in Christian Ministry and Theology', 
-    code: 'DIP-CMT-101', 
-    faculty: 'Theology', 
-    department: 'Biblical Studies', 
-    level: 'Diploma', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'A comprehensive foundational program designed to equip students with essential biblical knowledge and practical ministry skills for effective service in the church.',
-    syllabus: 'Module 1: Old Testament Foundations. Module 2: New Testament Survey. Module 3: Basic Christian Doctrine. Module 4: Principles of Pastoral Ministry. Module 5: Homiletics and Public Speaking. Module 6: Evangelism and Missions. Module 7: Christian Leadership and Ethics.'
-  },
-  { 
-    id: 'CRS-THEO-101', 
-    name: 'Introduction to Biblical Interpretation', 
-    code: 'THEO101', 
-    faculty: 'Theology', 
-    department: 'Biblical Studies', 
-    level: 'Undergraduate', 
-    credits: 3, 
-    status: 'Published', 
-    description: 'Foundational principles of Hermeneutics for effective bible study.',
-    syllabus: 'Module 1: History of Interpretation. Module 2: Literary Context & Genre. Module 3: Historical-Cultural Background. Module 4: The Role of the Holy Spirit. Module 5: Practical Exegesis.'
-  },
-  { 
-    id: 'CRS-THEO-102', 
-    name: 'Old Testament Survey', 
-    code: 'THEO102', 
-    faculty: 'Theology', 
-    department: 'Biblical Studies', 
-    level: 'Undergraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'A comprehensive survey of the books of the Old Testament.',
-    syllabus: 'Module 1: The Pentateuch. Module 2: Historical Books. Module 3: Poetic & Wisdom Literature. Module 4: Major & Minor Prophets.'
-  },
-  { 
-    id: 'CRS-THEO-103', 
-    name: 'New Testament Survey', 
-    code: 'THEO103', 
-    faculty: 'Theology', 
-    department: 'Biblical Studies', 
-    level: 'Undergraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'A survey of the historical background and content of the New Testament.',
-    syllabus: 'Module 1: The Gospels & Acts. Module 2: Pauline Epistles. Module 3: General Epistles. Module 4: The Book of Revelation.'
-  },
-  { 
-    id: 'CRS-PHIL-201', 
-    name: 'Introduction to Christian Philosophy', 
-    code: 'PHIL201', 
-    faculty: 'Theology', 
-    department: 'Philosophy & Ethics', 
-    level: 'Undergraduate', 
-    credits: 3, 
-    status: 'Published', 
-    description: 'Survey of major philosophical movements and their relationship to Christian thought.',
-    syllabus: 'Unit 1: Ancient Philosophy (Plato/Aristotle). Unit 2: Medieval Synthesis (Augustine/Aquinas). Unit 3: Modernity & Faith. Unit 4: Contemporary Moral Issues.'
-  },
-  { 
-    id: 'CRS-APOL-301', 
-    name: 'Classical Christian Apologetics', 
-    code: 'APOL301', 
-    faculty: 'Theology', 
-    department: 'Philosophy & Ethics', 
-    level: 'Undergraduate', 
-    credits: 3, 
-    status: 'Published', 
-    description: 'Development of skills to defend the core truth claims of the Christian faith.',
-    syllabus: 'Module 1: The Existence of God. Module 2: The Reliability of Scripture. Module 3: The Resurrection of Jesus. Module 4: Addressing Objections.'
-  },
+  // --- SCHOOL OF THEOLOGY ---
+  { id: 'CRS-THEO-099', name: 'Diploma in Christian Ministry and Theology', code: 'DIP-CMT-101', faculty: 'Theology', department: 'Biblical Studies', level: 'Diploma', credits: 4, status: 'Published', description: 'Foundational program for church ministry.', syllabus: 'Syllabus content...' },
+  { id: 'CRS-THEO-101', name: 'Introduction to Biblical Interpretation', code: 'THEO101', faculty: 'Theology', department: 'Biblical Studies', level: 'Undergraduate', credits: 3, status: 'Published', description: 'Hermeneutics principles.', syllabus: 'Syllabus content...' },
+  { id: 'CRS-THEO-501', name: 'M.A. in Systematic Theology', code: 'THEO501', faculty: 'Theology', department: 'Biblical Studies', level: 'Postgraduate', credits: 4, status: 'Published', description: 'Advanced dogmatics.', syllabus: 'Syllabus content...' },
   
-  // --- SCHOOL OF THEOLOGY: MASTER'S LEVEL ---
-  { 
-    id: 'CRS-THEO-501', 
-    name: 'M.A. in Systematic Theology: Advanced Dogmatics', 
-    code: 'THEO501', 
-    faculty: 'Theology', 
-    department: 'Biblical Studies', 
-    level: 'Postgraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'Advanced inquiry into the internal consistency and biblical foundations of Christian doctrine.',
-    syllabus: 'Module 1: Prolegomena & Bibliology. Module 2: Theology Proper. Module 3: Christology. Module 4: Pneumatology. Module 5: Soteriology.'
-  },
-  { 
-    id: 'CRS-THEO-510', 
-    name: 'M.A. in Christian Apologetics: Philosophical Defense', 
-    code: 'APOL510', 
-    faculty: 'Theology', 
-    department: 'Philosophy & Ethics', 
-    level: 'Postgraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'Equipping students with philosophical tools to defend the Christian faith against modern secular critiques.',
-    syllabus: 'Module 1: History of Apologetics. Module 2: Cosmological and Teleological Arguments. Module 3: The Problem of Evil. Module 4: Engaging Postmodernism.'
-  },
-  { 
-    id: 'CRS-THEO-520', 
-    name: 'M.A. in Christian Education: Curriculum Development', 
-    code: 'CE520', 
-    faculty: 'Theology', 
-    department: 'Education', 
-    level: 'Postgraduate', 
-    credits: 3, 
-    status: 'Published', 
-    description: 'Designing instructional materials for faith-based educational settings.',
-    syllabus: 'Module 1: Foundations of Education. Module 2: Learning Theories. Module 3: Instructional Design. Module 4: Assessment & Evaluation.'
-  },
-  { 
-    id: 'CRS-MIN-550', 
-    name: 'Master of Divinity: Pastoral Care & Counseling', 
-    code: 'MDIV550', 
-    faculty: 'Theology', 
-    department: 'Ministry', 
-    level: 'Postgraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'Practical training for clinical and congregational counseling.',
-    syllabus: 'Unit 1: The Theology of Counseling. Unit 2: Counseling Skills & Ethics. Unit 3: Crisis Intervention. Unit 4: Marriage & Family Dynamics.'
-  },
+  // --- DEPARTMENT OF ICT ---
+  { id: 'CRS-ICT-001', name: 'Introduction to Computational Thinking', code: 'CS101', faculty: 'ICT', department: 'Computer Science', level: 'Undergraduate', credits: 4, status: 'Published', description: 'Problem solving via Python.', syllabus: 'Syllabus content...' },
+  { id: 'CRS-ICT-002', name: 'Full-Stack Software Architecture', code: 'CS302', faculty: 'ICT', department: 'Computer Science', level: 'Undergraduate', credits: 4, status: 'Published', description: 'React, Node.js, and Cloud.', syllabus: 'Syllabus content...' },
+  
+  // --- SCHOOL OF BUSINESS ---
+  { id: 'CRS-BUS-001', name: 'Strategic Financial Management', code: 'MBA101', faculty: 'Business', department: 'Finance', level: 'Postgraduate', credits: 4, status: 'Published', description: 'Corporate finance strategy.', syllabus: 'Syllabus content...' },
+  
+  // --- EDUCATION DEPARTMENT ---
+  { id: 'CRS-EDU-505', name: 'M.A. in Educational Leadership', code: 'EDUL505', faculty: 'Education', department: 'Pedagogy', level: 'Postgraduate', credits: 4, status: 'Published', description: 'Leading school transformation.', syllabus: 'Syllabus content...' },
+];
 
-  // --- SCHOOL OF THEOLOGY: DOCTORAL & PH.D LEVEL ---
-  { 
-    id: 'CRS-THEO-801', 
-    name: 'Ph.D. in Systematic Theology: Dissertation Research', 
-    code: 'PHDT801', 
-    faculty: 'Theology', 
-    department: 'Biblical Studies', 
-    level: 'Postgraduate', 
-    credits: 12, 
-    status: 'Published', 
-    description: 'Original research and dissertation writing in a specialized area of dogmatic theology.',
-    syllabus: 'Phase 1: Research Methodology. Phase 2: Comprehensive Exams. Phase 3: Dissertation Proposal. Phase 4: Dissertation Defense.'
-  },
-  { 
-    id: 'CRS-THEO-810', 
-    name: 'Ph.D. in Christian Apologetics: Existential Critiques', 
-    code: 'PHDA810', 
-    faculty: 'Theology', 
-    department: 'Philosophy & Ethics', 
-    level: 'Postgraduate', 
-    credits: 9, 
-    status: 'Published', 
-    description: 'Engaging with existentialism and nihilism from a rigorous Christian philosophical framework.',
-    syllabus: 'Module 1: Kierkegaard. Module 2: Nietzsche & Nihilism. Module 3: Sartre & Secularism. Module 4: Christian Existential Responses.'
-  },
-  { 
-    id: 'CRS-THEO-820', 
-    name: 'Ph.D. in Christian Education: Sociological Foundations', 
-    code: 'PHDE820', 
-    faculty: 'Theology', 
-    department: 'Education', 
-    level: 'Postgraduate', 
-    credits: 9, 
-    status: 'Published', 
-    description: 'Exploring the impact of societal structures on faith transmission in educational institutions.',
-    syllabus: 'Module 1: Sociology of Religion. Module 2: The Family as Educational Agent. Module 3: Secularization in Schools. Module 4: Institutional Leadership.'
-  },
-  { 
-    id: 'CRS-DMIN-701', 
-    name: 'Doctor of Ministry (D.Min): Strategic Leadership', 
-    code: 'DMIN701', 
-    faculty: 'Theology', 
-    department: 'Ministry', 
-    level: 'Postgraduate', 
-    credits: 6, 
-    status: 'Published', 
-    description: 'Professional doctorate focusing on the integration of theology and the practice of ministry leadership.',
-    syllabus: 'Seminar 1: Contemporary Ministry Context. Seminar 2: Spiritual Formation for Leaders. Seminar 3: Institutional Growth Strategies.'
-  },
-
-  // --- DEPARTMENT OF ICT & OTHER TRACKS ---
-  { 
-    id: 'CRS-ICT-001', 
-    name: 'Introduction to Computational Thinking', 
-    code: 'CS101', 
-    faculty: 'ICT', 
-    department: 'Computer Science', 
-    level: 'Undergraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'Foundational problem solving via algorithmic processes and Python programming.',
-    syllabus: 'Module 1: Abstraction & Patterns. Module 2: Basic Programming. Module 3: Algorithmic Efficiency. Module 4: Debugging.'
-  },
-  { 
-    id: 'CRS-ICT-002', 
-    name: 'Full-Stack Software Architecture', 
-    code: 'CS302', 
-    faculty: 'ICT', 
-    department: 'Computer Science', 
-    level: 'Undergraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'Designing scalable applications using React, Node.js, and cloud-native microservices.',
-    syllabus: 'Module 1: Frontend (React). Module 2: Backend (Node/Express). Module 3: Databases (SQL/NoSQL). Module 4: Cloud Deployment.'
-  },
-  { 
-    id: 'CRS-BUS-001', 
-    name: 'Strategic Financial Management', 
-    code: 'MBA101', 
-    faculty: 'Business', 
-    department: 'Finance', 
-    level: 'Postgraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'High-level analysis of corporate finance and investment strategies.',
-    syllabus: 'Module 1: Financial Statements. Module 2: Risk Models. Module 3: Capital Budgeting. Module 4: Corporate Governance.'
-  },
-  { 
-    id: 'CRS-EDU-505', 
-    name: 'M.A. in Educational Leadership', 
-    code: 'EDUL505', 
-    faculty: 'Education', 
-    department: 'Pedagogy', 
-    level: 'Postgraduate', 
-    credits: 4, 
-    status: 'Published', 
-    description: 'Leading school transformation and faculty development.',
-    syllabus: 'Module 1: Policy Analysis. Module 2: Talent Management. Module 3: Organizational Change.'
-  },
+const generateInitialLibrary = (): LibraryItem[] => [
+  // Theology
+  { id: 'LIB-THEO-001', title: 'Systematic Theology: An Introduction', author: 'Wayne Grudem', category: 'Theology', type: 'Hardcopy', status: 'Available', location: 'Stack A-12', year: '1994', isbn: '978-0310286707', description: 'Comprehensive guide to Christian doctrine.', downloadUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+  { id: 'LIB-THEO-002', title: 'The Cost of Discipleship', author: 'Dietrich Bonhoeffer', category: 'Theology', type: 'PDF', status: 'Digital', location: 'Cloud Node 1', year: '1937', description: 'Theological classic on grace and obedience.', downloadUrl: 'https://archive.org/download/thecostofdiscipl0000bonh/thecostofdiscipl0000bonh.pdf' },
+  { id: 'LIB-THEO-003', title: 'Hermeneutics: Principles and Processes', author: 'Henry Virkler', category: 'Theology', type: 'E-Book', status: 'Digital', location: 'Cloud Node 1', year: '2007', description: 'Textbook for THEO101.', downloadUrl: 'https://ia800204.us.archive.org/30/items/PrinciplesOfBiblicalInterpretation/PrinciplesOfBiblicalInterpretation.pdf' },
+  
+  // ICT
+  { id: 'LIB-ICT-001', title: 'Clean Code Concepts: Python Edition', author: 'Robert C. Martin (Adapted)', category: 'ICT', type: 'PDF', status: 'Digital', location: 'Tech Repository', year: '2008', description: 'Foundational principles for writing maintainable code.', downloadUrl: 'https://www.tutorialspoint.com/python/python_tutorial.pdf' },
+  { id: 'LIB-ICT-002', title: 'JavaScript Essentials for Developers', author: 'BMI ICT Faculty', category: 'ICT', type: 'E-Book', status: 'Digital', location: 'Cloud Node 2', year: '2023', description: 'Modern JS mechanics for full-stack architecture.', downloadUrl: 'https://www.tutorialspoint.com/javascript/javascript_tutorial.pdf' },
+  { id: 'LIB-ICT-003', title: 'Cyber Security Strategy Framework', author: 'NIST', category: 'ICT', type: 'Hardcopy', status: 'Borrowed', location: 'Stack C-04', year: '2021', description: 'Resource for CS302 cybersecurity module.', downloadUrl: 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf' },
+  
+  // Business
+  { id: 'LIB-BUS-001', title: 'The Intelligent Investor', author: 'Benjamin Graham', category: 'Business', type: 'Hardcopy', status: 'Available', location: 'Stack B-02', year: '1949', description: 'Definitive book on value investing.', downloadUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+  { id: 'LIB-BUS-002', title: 'Strategic Management: Concepts and Cases', author: 'Fred David', category: 'Business', type: 'PDF', status: 'Digital', location: 'Admin Vault', year: '2016', description: 'Core textbook for MBA101.', downloadUrl: 'https://archive.org/download/StrategicManagementConceptsAndCases/Strategic-Management-Concepts-and-Cases.pdf' },
+  
+  // Education
+  { id: 'LIB-EDU-001', title: 'Pedagogy: Educational Theory', author: 'BMI Education Faculty', category: 'Education', type: 'PDF', status: 'Digital', location: 'Education Archive', year: '2024', description: 'Critical theory on education.', downloadUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
+  { id: 'LIB-EDU-002', title: 'Educational Leadership Handbook', author: 'Institutional Review', category: 'Education', type: 'Hardcopy', status: 'Available', location: 'Stack E-01', year: '2009', description: 'Management in education settings.', downloadUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },
 ];
 
 const App: React.FC = () => {
@@ -355,74 +167,48 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('bmi_data_courses');
     return saved ? JSON.parse(saved) : initialCourses;
   });
+  const [library, setLibrary] = useState<LibraryItem[]>(() => {
+    const saved = localStorage.getItem('bmi_data_library');
+    const data = saved ? JSON.parse(saved) : generateInitialLibrary();
+    // Ensure all items have a usable URL for this session
+    return data.map((item: any) => ({
+      ...item,
+      downloadUrl: item.downloadUrl || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    }));
+  });
   const [eventsCount, setEventsCount] = useState(12);
 
   // Auto-save effects
-  useEffect(() => {
-    localStorage.setItem('bmi_data_students', JSON.stringify(students));
-  }, [students]);
+  useEffect(() => { localStorage.setItem('bmi_data_students', JSON.stringify(students)); }, [students]);
+  useEffect(() => { localStorage.setItem('bmi_data_staff', JSON.stringify(staff)); }, [staff]);
+  useEffect(() => { localStorage.setItem('bmi_data_transactions', JSON.stringify(transactions)); }, [transactions]);
+  useEffect(() => { localStorage.setItem('bmi_data_courses', JSON.stringify(courses)); }, [courses]);
+  useEffect(() => { localStorage.setItem('bmi_data_library', JSON.stringify(library)); }, [library]);
 
-  useEffect(() => {
-    localStorage.setItem('bmi_data_staff', JSON.stringify(staff));
-  }, [staff]);
-
-  useEffect(() => {
-    localStorage.setItem('bmi_data_transactions', JSON.stringify(transactions));
-  }, [transactions]);
-
-  useEffect(() => {
-    localStorage.setItem('bmi_data_courses', JSON.stringify(courses));
-  }, [courses]);
-
-  // Derived Values
   const totalStudents = students.length;
   const applicantCount = students.filter(s => s.status === 'Applicant').length;
   const totalRevenue = transactions.reduce((acc, curr) => curr.status === 'Paid' ? acc + curr.amt : acc, 0);
 
   const [logo, setLogo] = useState<string>(() => {
-    try {
-      return localStorage.getItem('bmi_logo') || "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png";
-    } catch (e) {
-      return "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png";
-    }
+    try { return localStorage.getItem('bmi_logo') || "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png"; } catch (e) { return "https://i.ibb.co/Gv2vPdJC/BMI-PNG.png"; }
   });
 
   const [theme, setTheme] = useState<string>(() => {
     try {
       const savedGeneral = localStorage.getItem('bmi_settings_general');
       return savedGeneral ? JSON.parse(savedGeneral).theme || 'light' : 'light';
-    } catch (e) {
-      return 'light';
-    }
+    } catch (e) { return 'light'; }
   });
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (theme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [theme]);
 
   const handleLogin = () => setIsAuthenticated(true);
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentView('dashboard');
-  };
-
-  const handleChangeView = (view: string) => {
-    if (view === 'ai') {
-      setIsAIModalOpen(true);
-    } else {
-      setCurrentView(view);
-    }
-  };
-
-  const handleLogoUpdate = (newLogo: string) => {
-    setLogo(newLogo);
-    localStorage.setItem('bmi_logo', newLogo);
-  };
-
+  const handleLogout = () => { setIsAuthenticated(false); setCurrentView('dashboard'); };
+  const handleChangeView = (view: string) => { if (view === 'ai') { setIsAIModalOpen(true); } else { setCurrentView(view); } };
+  const handleLogoUpdate = (newLogo: string) => { setLogo(newLogo); localStorage.setItem('bmi_logo', newLogo); };
   const handleThemeUpdate = (newTheme: string) => {
     setTheme(newTheme);
     const savedGeneral = localStorage.getItem('bmi_settings_general');
@@ -431,60 +217,23 @@ const App: React.FC = () => {
     localStorage.setItem('bmi_settings_general', JSON.stringify(general));
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} logo={logo} />;
-  }
+  if (!isAuthenticated) return <Login onLogin={handleLogin} logo={logo} />;
 
   return (
     <div className="flex min-h-screen bg-[#F8F9FA] dark:bg-gray-900 overflow-hidden transition-colors duration-300">
-      <Sidebar 
-        currentView={currentView} 
-        onChangeView={handleChangeView} 
-        onLogout={handleLogout}
-        logo={logo}
-      />
-
+      <Sidebar currentView={currentView} onChangeView={handleChangeView} onLogout={handleLogout} logo={logo} />
       <main className="flex-1 ml-64 h-screen overflow-y-auto relative bg-[#F8F9FA] dark:bg-gray-950">
         {currentView === 'dashboard' && (
-          <Dashboard 
-            userName="Admin" 
-            theme={theme} 
-            onNavigate={handleChangeView}
-            stats={{
-              students: totalStudents,
-              admissions: applicantCount,
-              tuition: totalRevenue,
-              events: eventsCount
-            }}
-            onAddStudent={(name) => {
+          <Dashboard userName="Admin" theme={theme} onNavigate={handleChangeView} stats={{ students: totalStudents, admissions: applicantCount, tuition: totalRevenue, events: eventsCount }} onAddStudent={(name) => {
                const [first, last] = name.split(' ');
                const newStud: Student = {
                  id: `BMI-2024-${Math.floor(Math.random() * 999).toString().padStart(3, '0')}`,
-                 firstName: first || 'New',
-                 lastName: last || 'Student',
-                 email: `${first?.toLowerCase() || 'new'}.${last?.toLowerCase() || 'student'}@bmi.edu`,
-                 phone: '+254 700 000 000',
-                 faculty: 'Undeclared',
-                 department: 'Undeclared',
-                 careerPath: 'Freshman',
-                 admissionYear: '2024',
-                 enrollmentTerm: 'Fall 2024',
-                 status: 'Active',
-                 standing: 'Good',
-                 gpa: 4.0,
-                 avatarColor: 'bg-indigo-500',
-                 photoZoom: 1.0
+                 firstName: first || 'New', lastName: last || 'Student', email: `${first?.toLowerCase() || 'new'}.${last?.toLowerCase() || 'student'}@bmi.edu`, phone: '+254 700 000 000', faculty: 'Undeclared', department: 'Undeclared', careerPath: 'Freshman', admissionYear: '2024', enrollmentTerm: 'Fall 2024', status: 'Active', standing: 'Good', gpa: 4.0, avatarColor: 'bg-indigo-500', photoZoom: 1.0
                };
                setStudents(prev => [newStud, ...prev]);
-            }}
-            onAddTransaction={(amt) => {
+            }} onAddTransaction={(amt) => {
                const newTx: Transaction = {
-                 ref: `TRX-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-                 name: 'Institutional Payment',
-                 desc: 'Dashboard Quick Entry',
-                 date: new Date().toISOString().split('T')[0],
-                 amt: amt,
-                 status: 'Paid'
+                 ref: `TRX-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`, name: 'Institutional Payment', desc: 'Dashboard Quick Entry', date: new Date().toISOString().split('T')[0], amt: amt, status: 'Paid'
                };
                setTransactions(prev => [newTx, ...prev]);
             }}
@@ -498,26 +247,21 @@ const App: React.FC = () => {
         {currentView === 'courses' && <Courses theme={theme} courses={courses} setCourses={setCourses} />}
         {currentView === 'exams' && <Exams />}
         {currentView === 'transcripts' && <Transcripts students={students} courses={courses} logo={logo} />}
-        {currentView === 'library' && <Library />}
+        {currentView === 'library' && <Library library={library} setLibrary={setLibrary} courses={courses} />}
         {currentView === 'hostels' && <Hostels />}
         {currentView === 'medical' && <Medical />}
         {currentView === 'inventory' && <Inventory />}
         {currentView === 'alumni' && <Alumni />}
-        {currentView === 'sms' && <Communications />}
         {currentView === 'visitors' && <Visitors />}
         {currentView === 'reports' && <Reports />}
         
-        <button 
-          onClick={() => setIsAIModalOpen(true)}
-          className="fixed bottom-8 right-8 bg-gradient-to-r from-[#4B0082] to-[#6A0DAD] text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-30 group border-2 border-[#FFD700]/30"
-        >
+        <button onClick={() => setIsAIModalOpen(true)} className="fixed bottom-8 right-8 bg-gradient-to-r from-[#4B0082] to-[#6A0DAD] text-white p-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-30 group border-2 border-[#FFD700]/30">
           <Bot size={28} />
           <span className="absolute right-full mr-4 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap top-1/2 -translate-y-1/2 pointer-events-none">
             BMI AI Advisor
           </span>
         </button>
       </main>
-
       <AIModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} />
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface User {
@@ -85,4 +86,19 @@ export interface Course {
   status: 'Published' | 'Draft' | 'Archived';
   description: string;
   syllabus?: string;
+}
+
+export interface LibraryItem {
+  id: string;
+  title: string;
+  author: string;
+  category: 'Theology' | 'ICT' | 'Business' | 'Education' | 'General';
+  type: 'PDF' | 'E-Book' | 'Hardcopy' | 'Journal' | 'Video';
+  status: 'Available' | 'Borrowed' | 'Reserved' | 'Digital';
+  location: string;
+  year: string;
+  isbn?: string;
+  description: string;
+  downloadUrl?: string;
+  coverImage?: string;
 }

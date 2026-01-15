@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 
 export const getGeminiResponse = async (prompt: string, context?: string): Promise<string> => {
   try {
@@ -29,6 +30,7 @@ export const getGeminiResponse = async (prompt: string, context?: string): Promi
         systemInstruction: systemInstruction,
         temperature: 0.7,
         topP: 0.95,
+        thinkingConfig: { thinkingBudget: 0 } // Disable thinking to reduce latency for standard responses
       }
     });
     
@@ -36,5 +38,48 @@ export const getGeminiResponse = async (prompt: string, context?: string): Promi
   } catch (error) {
     console.error("Error calling Gemini API:", error);
     return "I apologize, but I encountered an error while accessing the institutional knowledge base. Please try again or contact the ICT department.";
+  }
+};
+
+export const extractMetadataFromDoc = async (base64Data: string, fileName: string): Promise<any> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    // Clean base64 string
+    const data = base64Data.split(',')[1] || base64Data;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-flash-lite-latest', // Optimized: Uses the fastest available model for high-speed extraction
+      contents: [
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: data
+          }
+        },
+        {
+          text: `Directly extract metadata for BMI registry: Title, Author, Year, Category (Theology/ICT/Business/Education/General), and 2-sentence Description from file "${fileName}". Return JSON only.`
+        }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: { type: Type.STRING },
+            author: { type: Type.STRING },
+            year: { type: Type.STRING },
+            category: { type: Type.STRING },
+            description: { type: Type.STRING }
+          },
+          required: ["title", "author", "year", "category", "description"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || '{}');
+  } catch (error) {
+    console.error("AI Document Scan Failed:", error);
+    return null;
   }
 };
