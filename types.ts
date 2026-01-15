@@ -122,3 +122,20 @@ export interface RoomAssignment {
   checkInDate: string;
   status: 'Active' | 'Exited' | 'Waitlist';
 }
+
+export interface MedicalVisit {
+  id: string;
+  studentId: string;
+  studentName: string;
+  condition: string;
+  bloodType: string;
+  date: string;
+  attendingStaff: string;
+  status: 'Normal' | 'Urgent' | 'Follow-up';
+  vitals: {
+    temp: string;
+    bp: string;
+    pulse: string;
+  };
+  notes: string;
+}

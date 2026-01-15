@@ -250,7 +250,7 @@ const App: React.FC = () => {
         {currentView === 'transcripts' && <Transcripts students={students} courses={courses} logo={logo} />}
         {currentView === 'library' && <Library library={library} setLibrary={setLibrary} courses={courses} />}
         {currentView === 'hostels' && <Hostels students={students} />}
-        {currentView === 'medical' && <Medical />}
+        {currentView === 'medical' && <Medical students={students} />}
         {currentView === 'inventory' && <Inventory />}
         {currentView === 'alumni' && <Alumni />}
         {currentView === 'visitors' && <Visitors />}
