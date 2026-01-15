@@ -164,18 +164,60 @@ const Communications: React.FC<CommunicationsProps> = ({ students, staff }) => {
   const handleWhatsAppSend = () => {
     if (!message) return;
     const cleanMsg = message.replace(/<[^>]*>?/gm, '');
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(cleanMsg)}`, '_blank');
+    const formatNum = (num: string) => num.replace(/\D/g, '');
+    
+    let targetNumbers: string[] = [];
+
+    if (recipientType === 'Individual') {
+      const entity = students.find(s => s.id === selectedRecipientId) || staff.find(st => st.id === selectedRecipientId);
+      if (entity?.phone) {
+        targetNumbers.push(formatNum(entity.phone));
+      }
+    } else {
+      // Broadcast Logic
+      let targets: (Student | StaffMember)[] = [];
+      if (recipientGroup === 'All Registered Students') {
+        targets = students;
+      } else if (recipientGroup === 'Faculty of Theology') {
+        targets = students.filter(s => s.faculty === 'Theology');
+      } else if (recipientGroup === 'ICT Department') {
+        targets = students.filter(s => s.faculty === 'ICT');
+      } else if (recipientGroup === 'Business Cohort') {
+        targets = students.filter(s => s.faculty === 'Business');
+      } else if (recipientGroup === 'Education Staff') {
+        targets = staff.filter(st => st.department.includes('Education') || st.category === 'Academic');
+      } else if (recipientGroup === 'Eden Residence Tenants') {
+        targets = students.filter(s => s.status === 'Active').slice(0, 10); // Simulated segment
+      } else if (recipientGroup === 'Emergency Nodes') {
+        targets = staff.filter(st => st.category === 'Management');
+      }
+      targetNumbers = targets.map(t => t.phone).filter(Boolean).map(n => formatNum(n));
+    }
+
+    if (targetNumbers.length === 0) {
+      setToastMsg('Registry Error: No valid phone numbers identified for selection.');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+
+    // Direct WhatsApp Dispatch (Sequential tab opening with delay to prevent browser blocking)
+    targetNumbers.forEach((num, idx) => {
+      setTimeout(() => {
+        window.open(`https://api.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(cleanMsg)}`, '_blank');
+      }, idx * 800);
+    });
     
     setHistory([{
       id: `MSG-${Math.floor(Math.random() * 9000) + 1000}`,
       type: 'SMS',
-      recipient: getRecipientLabel(),
+      recipient: `${getRecipientLabel()} (WhatsApp)`,
       date: new Date().toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
       status: 'Delivered',
       text: message
     }, ...history]);
     
-    setToastMsg(`WhatsApp node initialized for ${getRecipientLabel()}`);
+    setToastMsg(`WhatsApp Gateway: Initiating dispatch to ${targetNumbers.length} entities.`);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
